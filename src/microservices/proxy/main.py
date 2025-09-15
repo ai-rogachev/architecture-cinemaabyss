@@ -4,12 +4,11 @@ from typing import List, Optional
 import uvicorn
 import os
 
-from .models import (
-    Movie, MovieInput, MovieEvent, UserEvent, PaymentEvent,
-    EventResponse
-)
-from .proxy_service import ProxyService
-from .config import settings
+from models import Movie, MovieInput, MovieEvent
+from models import UserEvent, PaymentEvent, EventResponse
+
+from proxy_service import ProxyService
+from config import settings
 
 app = FastAPI(title="CinemaAbyss Proxy Service", version="1.0.0")
 
@@ -175,5 +174,5 @@ if __name__ == "__main__":
         "main:app",
         host="0.0.0.0",
         port=settings.port,
-        reload=True
+        reload=False
     )

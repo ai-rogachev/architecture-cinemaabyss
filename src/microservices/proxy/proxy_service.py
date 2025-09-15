@@ -1,9 +1,17 @@
 import httpx
 import random
+import logging
 from typing import List, Optional, Union
 from fastapi import HTTPException
-from .models import Movie, MovieInput, User, UserInput, Payment, PaymentInput, Subscription, SubscriptionInput
-from .config import settings
+from models import Movie, MovieInput
+from config import settings
+
+# Configure logging
+logging.basicConfig(
+    level=getattr(logging, settings.log_level),
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 
 class ProxyService:
@@ -13,15 +21,30 @@ class ProxyService:
         self.events_service_url = settings.events_service_url
         self.gradual_migration = settings.gradual_migration
         self.movies_migration_percent = settings.movies_migration_percent
+        
+        if settings.enable_proxy_logging:
+            logger.info(f"ProxyService initialized with settings: {settings}")
+            logger.info(f"Monolith URL: {self.monolith_url}")
+            logger.info(f"Movies Service URL: {self.movies_service_url}")
+            logger.info(f"Events Service URL: {self.events_service_url}")
+            logger.info(f"Gradual Migration: {self.gradual_migration} ({self.movies_migration_percent}%)")
 
     def _should_use_microservice(self) -> bool:
         """Определяет, использовать ли микросервис на основе фиче-флага и процента миграции"""
         if not self.gradual_migration:
+            if settings.log_target_destination:
+                logger.debug("Gradual migration disabled - using monolith")
             return False
         
         # Генерируем случайное число от 1 до 100
         random_percent = random.randint(1, 100)
-        return random_percent <= self.movies_migration_percent
+        use_microservice = random_percent <= self.movies_migration_percent
+        
+        if settings.log_target_destination:
+            target = "microservice" if use_microservice else "monolith"
+            logger.info(f"Migration decision: {random_percent}% <= {self.movies_migration_percent}% -> {target}")
+        
+        return use_microservice
 
     async def _make_request(self, url: str, method: str = "GET", **kwargs) -> dict:
         """Выполняет HTTP запрос к указанному URL"""
