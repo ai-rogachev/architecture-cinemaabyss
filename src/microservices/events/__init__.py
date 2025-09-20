@@ -1,0 +1,3 @@
+"""
+CinemaAbyss Events Service Package
+"""
