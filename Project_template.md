@@ -59,6 +59,14 @@
 Необходимые тесты для проверки этого API вызываются при запуске npm run test:local из папки tests/postman 
 Приложите скриншот тестов и скриншот состояния топиков Kafka из UI http://localhost:8090 
 
+##### Tests screenshots
+
+![Passed Tests](./screenshots/Task_2/events_tests.png)
+
+##### K8s Topics
+
+![passed_tests](./screenshots/Task 2/kafka_topics.png)
+
 # Задание 3
 
 Команда начала переезд в Kubernetes для лучшего масштабирования и повышения надежности. 
@@ -275,6 +283,14 @@ cat .docker/config.json | base64
 #### Шаг 3
 Добавьте сюда скриншота вывода при вызове https://cinemaabyss.example.com/api/movies и  скриншот вывода event-service после вызова тестов.
 
+##### Service in K8s
+
+![Get movies](./screenshots/Task_3/all-movies-from-k8s.png)
+
+##### Events log in K8s
+
+![Get movies](./screenshots/Task_3/events-sevice-log-from-k8s.png)
+
 
 # Задание 4
 Для простоты дальнейшего обновления и развертывания вам как архитектуру необходимо так же реализовать helm-чарты для прокси-сервиса и проверить работу 
@@ -346,9 +362,17 @@ kubectl get pods -n cinemaabyss
 minikube tunnel
 ```
 
-Потом вызовите 
+Потом вызовите
 https://cinemaabyss.example.com/api/movies
 и приложите скриншот развертывания helm и вывода https://cinemaabyss.example.com/api/movies
+
+##### Get data in K8s
+
+![Get movies](./screenshots/Task_4/curl-get-movies.png)
+
+##### Run with Helm
+
+![Install from helm](./screenshots/Task_4/helm-install.png)
 
 ## Удаляем все
 
