@@ -22,6 +22,12 @@ async def health_check():
     return "Strangler Fig Proxy is healthy"
 
 
+@app.get("/api/proxy/health")
+async def proxy_health_check():
+    """Health check endpoint for Kubernetes probes"""
+    return "Strangler Fig Proxy is healthy"
+
+
 @app.get("/api/movies", response_model=List[Movie])
 async def get_movies(movie_id: Optional[int] = Query(None, description="ID of specific movie")):
     """
