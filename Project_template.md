@@ -6,7 +6,7 @@
 Результат представьте в виде контейнерной диаграммы в нотации С4.
 Добавьте ссылку на файл в этот шаблон
 
-![CinemaAbyss To-Be Architecture - Container Diagram](./diagrams/CinemaAbyss To-Be Architecture - Container Diagram.png)
+![CinemaAbyss To-Be Architecture - Container Diagram](./diagrams/CinemaAbyss%20To-Be%20Architecture%20-%20Container%20Diagram.png)
 
 # Задание 2
 
@@ -66,7 +66,7 @@
 
 ##### K8s Topics
 
-![passed_tests](./screenshots/Task 2/kafka_topics.png)
+![passed_tests](./screenshots/Task_2/kafka_topics.png)
 
 # Задание 3
 
