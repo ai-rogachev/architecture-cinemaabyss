@@ -1,0 +1,71 @@
+name: PlantUML Diagrams
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  generate-diagrams:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    - name: Install Graphviz
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y graphviz
+
+    - name: Download PlantUML JAR
+      run: |
+        wget -O plantuml.jar https://github.com/plantuml/plantuml/releases/download/v1.2025.4/plantuml-1.2025.4.jar
+
+    - name: Generate Diagrams
+      run: |
+        for dir in diagrams; do
+          if [ -d "$dir" ]; then
+            for file in "$dir"/*.puml; do
+              if [ -f "$file" ]; then
+                echo "Processing: $file"
+                java -jar plantuml.jar -tpng "$file"
+              fi
+            done
+          fi
+        done
+
+    - name: Commit Diagrams
+      run: |
+        git config --local user.email "github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "github-actions[bot]"
+        git add diagrams/*.png
+        if git diff --staged --quiet; then
+          echo "No changes to commit"
+        else
+          git commit -m "Automated diagram generation"
+          
+          # For pull requests, we need to fetch the source branch first
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "Pull request detected. Source branch: ${{ github.head_ref }}"
+            # Fetch the source branch
+            git fetch origin ${{ github.head_ref }}:${{ github.head_ref }}
+            git pull origin ${{ github.head_ref }} --rebase
+            # Push to the source branch
+            git push origin HEAD:refs/heads/${{ github.head_ref }}
+          else
+            echo "Direct push detected. Target: ${{ github.ref }}"
+            git pull origin ${{ github.ref_name }} --rebase
+            git push origin HEAD:${{ github.ref }}
+          fi
+        fi
+      if: success()

@@ -1,0 +1,106 @@
+@startuml CinemaAbyss To-Be Architecture - Container Diagram
+
+!includeurl https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+LAYOUT_WITH_LEGEND()
+
+' Layout improvements
+skinparam componentStyle rectangle
+skinparam roundcorner 20
+skinparam nodesep 80
+skinparam ranksep 100
+
+title CinemaAbyss To-Be Architecture - Container Diagram
+
+Person(client, "Client", "Web and Mobile users")
+Person(admin, "Admin", "System administrators")
+
+System_Boundary(cinemaabyss, "CinemaAbyss System") {
+    Container(kong, "Kong API Gateway", "Kong", "Единая точка входа: SSL termination, rate limiting, authentication, load balancing, request routing", "Port: 8000")
+    
+    ' Recommendation Domain
+    Container_Boundary(recommendationDomain, "Recommendation Domain") {
+        Container(recommendationService, "Recommendation Service", "Go", "Предоставляет персонализированные рекомендации", "Port: 8085")
+        ContainerDb(recommendationDb, "Recommendation Database", "PostgreSQL", "Хранит персонализированные рекомендации и предпочтения пользователей")
+    }
+
+    ' User Management Domain
+    Container_Boundary(userDomain, "User Management Domain") {
+        Container(userService, "User Management Service", "Go", "Обрабатывает регистрацию пользователей, аутентификацию, управление профилями, валидацию пользователей и предоставляет API для предпочтений", "Port: 8083")
+        ContainerDb(userDb, "User Database", "PostgreSQL", "Хранит данные пользователей, профили и информацию об аутентификации")
+    }
+    
+    ' Subscription Domain
+    Container_Boundary(subscriptionDomain, "Subscription Domain") {
+        Container(subscriptionService, "Subscription Service", "Go", "Управляет планами подписок, биллинговыми циклами, активацией и деактивацией подписок", "Port: 8084")
+        ContainerDb(subscriptionDb, "Subscription Database", "PostgreSQL", "Хранит планы подписок, биллинговые циклы и статусы подписок")
+    }
+    
+    ' Payment Domain
+    Container_Boundary(paymentDomain, "Payment Domain") {
+        Container(paymentService, "Payment Service", "Go", "Обрабатывает платежи, интеграцию с платежными шлюзами, обработку транзакций и возвраты", "Port: 8086")
+        ContainerDb(paymentDb, "Payment Database", "PostgreSQL", "Хранит историю платежей, транзакции и информацию о возвратах")
+    }
+    
+    ' Event Processing Domain
+    Container_Boundary(eventDomain, "Event Processing Domain") {
+        Container(eventsService, "Events Service", "Go", "Потребляет события из Kafka, обрабатывает их, публикует обработанные события и собирает аналитику", "Port: 8082")
+        ContainerDb(eventsDb, "Events Database", "PostgreSQL", "Хранит журналы событий и аналитические данные")
+    }
+    
+    ' Content Management Domain
+    Container_Boundary(contentDomain, "Content Management Domain") {
+        Container(moviesService, "Movies Service", "Go", "Управляет метаданными фильмов, жанрами, категориями, поиском, фильтрацией и предоставляет API для рекомендаций", "Port: 8081")
+        ContainerDb(moviesDb, "Movies Database", "PostgreSQL", "Хранит метаданные фильмов, жанры и информацию о контенте")
+    }
+
+    
+    ' Message Broker Infrastructure
+    Container_Boundary(messageBroker, "Message Broker Infrastructure") {
+        ContainerQueue(kafka, "Apache Kafka", "Message Broker", "Обрабатывает потоковую передачу событий и асинхронную коммуникацию между сервисами")
+    }
+}
+
+System_Ext(external, "External Service", "Сторонний сервис рекомендаций")
+
+' Подключения клиентов
+Rel(client, kong, "Использует", "HTTPS/REST")
+Rel(admin, kong, "Управляет", "HTTPS/REST")
+
+' Маршрутизация от Kong к сервисам (запросы и ответы)
+Rel(kong, userService, "Маршрутизирует запросы и ответы", "HTTP/REST")
+Rel(kong, subscriptionService, "Маршрутизирует запросы и ответы", "HTTP/REST")
+Rel(kong, paymentService, "Маршрутизирует запросы и ответы", "HTTP/REST")
+Rel(kong, moviesService, "Маршрутизирует запросы и ответы", "HTTP/REST")
+Rel(kong, recommendationService, "Маршрутизирует запросы и ответы", "HTTP/REST")
+Rel(kong, eventsService, "Маршрутизирует запросы и ответы", "HTTP/REST")
+
+' Подключения сервисов к базам данных
+Rel(userService, userDb, "Читает и записывает", "SQL")
+Rel(subscriptionService, subscriptionDb, "Читает и записывает", "SQL")
+Rel(paymentService, paymentDb, "Читает и записывает", "SQL")
+Rel(moviesService, moviesDb, "Читает и записывает", "SQL")
+Rel(recommendationService, recommendationDb, "Читает и записывает", "SQL")
+Rel(eventsService, eventsDb, "Читает и записывает", "SQL")
+
+' Межсервисная коммуникация
+Rel_R(subscriptionService, paymentService, "Инициирует платежи", "HTTP/REST")
+Rel_L(paymentService, subscriptionService, "Уведомляет о статусе платежа", "HTTP/REST")
+Rel(recommendationService, moviesService, "Получает данные о фильмах", "HTTP/REST")
+Rel(recommendationService, userService, "Получает предпочтения пользователей", "HTTP/REST")
+Rel(recommendationService, external, "Получает рекомендации", "HTTP/REST")
+
+' Событийная коммуникация (публикация)
+Rel(userService, kafka, "Публикует события пользователей", "Kafka Protocol")
+Rel(subscriptionService, kafka, "Публикует события подписок", "Kafka Protocol")
+Rel(paymentService, kafka, "Публикует события платежей", "Kafka Protocol")
+Rel(moviesService, kafka, "Публикует события фильмов", "Kafka Protocol")
+
+' Событийная коммуникация (потребление)
+Rel(kafka, eventsService, "Потребляет события", "Kafka Protocol")
+Rel(kafka, recommendationService, "Потребляет события для рекомендаций", "Kafka Protocol")
+
+' Обратная связь от Events Service
+Rel(eventsService, kafka, "Публикует обработанные события", "Kafka Protocol")
+
+@enduml
